@@ -1,60 +1,51 @@
-# OVision Android SDK Android
+package ru.ovision.detectsdk;
 
-## Installation
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
-1. settings.gradle
-```gradle
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-        maven {
-            url "https://reposilite.o.vision/releases" <- Add this
-        }
-    }
-}
-```
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.widget.TextView;
+import android.widget.Toast;
+import java.util.Timer;
+import java.util.TimerTask;
 
-2. app/build.gradle file
-```gradle
-android {
-    // ...
-    buildTypes.each {
-        it.resValue 'string', 'OvisionApiKey', '<OVISION_API_KEY>' // Add this and replace OVISION_API_KEY by your api key.
-    }
-    // ...
-}
-
-dependencies {
-    // ...
-
-    implementation "o.vision:facedetector:1.0.0" // Add this
-}
-```
-
-## Usage
-
-```java
 import o.vision.facedetector.DetectResponse;
 import o.vision.facedetector.OnDetect;
 import o.vision.facedetector.OvisionFaceDetector;
 
 public class MainActivity extends AppCompatActivity {
+    private static final int PERMISSION_REQUEST_CAMERA = 0;
     private OvisionFaceDetector faceDetector;
-    
+    private long time;
+
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    protected void onSaveInstanceState(Bundle oldInstanceState) {
+        super.onSaveInstanceState(oldInstanceState);
+        oldInstanceState.clear();
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
         stop();
     }
-    
+
     @Override
     protected void onStart() {
         super.onStart();
-        startCamera();
+        showCameraPreview();
     }
-    
+
     public void startCamera() {
         faceDetector = findViewById(R.id.face_detector);
         TextView statusTextView = findViewById(R.id.status);
@@ -154,10 +145,55 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stop();
+    }
+
     public void stop() {
         if (faceDetector != null) {
             faceDetector.stop();
         }
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == PERMISSION_REQUEST_CAMERA) {
+            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startCamera();
+            }
+        }
+    }
+
+    private void requestCameraPermission() {
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                Manifest.permission.CAMERA)) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAMERA},
+                    PERMISSION_REQUEST_CAMERA);
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAMERA}, PERMISSION_REQUEST_CAMERA);
+        }
+    }
+
+    private void showCameraPreview() {
+        PackageManager pm = getPackageManager();
+
+        if (!pm.hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
+            Toast.makeText(this, "Device not have camera hardware", Toast.LENGTH_LONG);
+            return;
+        }
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED) {
+            startCamera();
+        } else {
+            requestCameraPermission();
+        }
+    }
 }
-```
