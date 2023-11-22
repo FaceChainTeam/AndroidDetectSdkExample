@@ -10,7 +10,7 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven {
-            url "https://reposilite.o.vision/releases" <- Add this
+            url "https://reposilite.o.vision/releases" // <-- Add this
         }
     }
 }
@@ -21,7 +21,7 @@ dependencyResolutionManagement {
 android {
     // ...
     buildTypes.each {
-        it.resValue 'string', 'OvisionApiKey', '<OVISION_API_KEY>' // Add this and replace OVISION_API_KEY by your api key.
+        it.resValue 'string', 'OvisionApiKey', '<OVISION_API_KEY>' // <-- Add this and replace OVISION_API_KEY by your api key.
     }
     // ...
 }
@@ -29,11 +29,11 @@ android {
 dependencies {
     // ...
 
-    implementation "o.vision:facedetector:1.0.0" // Add this
+    implementation "o.vision:facedetector:1.0.0" // <-- Add this
 }
 ```
 
-## Usage
+## Usage Example
 
 ```java
 import o.vision.facedetector.DetectResponse;
