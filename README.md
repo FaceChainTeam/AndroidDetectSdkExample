@@ -1,0 +1,1 @@
+# AndroidDetectSdkExample
