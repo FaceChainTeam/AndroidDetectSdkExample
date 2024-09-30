@@ -41,25 +41,42 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+    }
+
+    @Override
     protected void onStart() {
         super.onStart();
         showCameraPreview();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stop();
+    }
+
     public void startCamera() {
+        faceDetector = null;
         faceDetector = findViewById(R.id.face_detector);
         TextView statusTextView = findViewById(R.id.status);
         time = System.currentTimeMillis();
-        faceDetector.setApiToken(getString(R.string.OvisionApiKey));
-        faceDetector.setDeviceName("DemoSDKExample");
+        faceDetector.setAuthCreds("b712a777-5aeb-493b-bbe9-5c09e26b9f29", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBJZCI6ImI3MTJhNzc3LTVhZWItNDkzYi1iYmU5LTVjMDllMjZiOWYyOSIsImlhdCI6MTcyMjI0NzI4MCwiZXhwIjoyMDMzMjg3MjgwfQ.zR-ij3AzkNQn97JcafHBRSf0gwHt4yhr3CJWJs_zTAQ");
         faceDetector.start(new OnDetect() {
             @Override
             public void detected(DetectResponse response) {
                 String status = response.code;
                 statusTextView.setTextColor(Color.WHITE);
+                statusTextView.setText("STATUS: " + status);
                 int flowTime = (int) (System.currentTimeMillis() - time);
+                String transactionId = response.data.get("transactionId");
+                String score = response.data.get("score");
                 statusTextView.setVisibility(TextView.VISIBLE);
                 switch (status) {
+                    case "MANY_FACES":
+                        statusTextView.setText("В кадре должно быть одно лицо");
+                        break;
                     case "TAKE_SNAPSHOT":
                         statusTextView.setText("Делаем ваше фото");
                         break;
@@ -67,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
                         statusTextView.setText("Отправляем на сервер");
                         break;
                     case "NO_FACE":
-                        statusTextView.setText("В кадре нет лица");
+                        statusTextView.setText("Мы вас не видем :(");
                         break;
                     case "FACE_NOT_VALID_FACE_IS_TOO_SMALL_ERROR":
                         statusTextView.setText("Вы слишком далеко");
@@ -84,17 +101,17 @@ public class MainActivity extends AppCompatActivity {
                     case "FACE_NOT_VALID_RIGHT_ROTATION":
                         statusTextView.setText("Поверните голову направо.");
                         break;
-                    case "FACE_NOT_VALID_MASK_ON_ERROR":
-                    case "FACE_NOT_VALID_SEVERAL_FACES_ON_IMAGE_ERROR":
-                    case "FACE_NOT_VALID_LANDMARKS_NOT_CORRECT_ERROR":
-                    case "FACE_NOT_VALID_LANDMARKS_NOT_FOUND_ERROR":
-                    case "FACE_IS_TOO_CLOSE_TO_ANOTHER_FACE_ERROR":
-                    case "FACE_NOT_VALID_ANOTHER_PERSON_ON_IMAGE_ERROR":
-                        statusTextView.setTextColor(Color.RED);
-                        statusTextView.setText(status);
-                        break;
-                    case "FACE_NOT_VALID_UNKNOWN_ERROR":
-                    case "FACE_NOT_VALID_NO_FACE_ON_IMAGE_ERROR":
+//                    case "FACE_NOT_VALID_MASK_ON_ERROR":
+//                    case "FACE_NOT_VALID_SEVERAL_FACES_ON_IMAGE_ERROR":
+//                    case "FACE_NOT_VALID_LANDMARKS_NOT_CORRECT_ERROR":
+//                    case "FACE_NOT_VALID_LANDMARKS_NOT_FOUND_ERROR":
+//                    case "FACE_IS_TOO_CLOSE_TO_ANOTHER_FACE_ERROR":
+//                    case "FACE_NOT_VALID_ANOTHER_PERSON_ON_IMAGE_ERROR":
+//                        statusTextView.setTextColor(Color.RED);
+//                        statusTextView.setText(status);
+//                        break;
+//                    case "FACE_NOT_VALID_UNKNOWN_ERROR":
+//                    case "FACE_NOT_VALID_NO_FACE_ON_IMAGE_ERROR":
                     case "FACE_NOT_VALID_SPOOF_ERROR":
                     case "INTERNAL_SERVER_ERROR":
                     case "IMAGE_CAPTURE_EXCEPTION":
@@ -103,26 +120,14 @@ public class MainActivity extends AppCompatActivity {
                     case "QUALITY_IS_NOT_GOOD":
                     case "UNCERTAINTY_IS_NOT_GOOD":
                     case "UNKNOWN_ERROR":
-                    case "ACCESS_DENIED":
+//                    case "ACCESS_DENIED":
                         statusTextView.setTextColor(Color.RED);
-                        statusTextView.setText(status + "\nМы вас не узнали" + "\nFlow Time: " + flowTime);
+                        statusTextView.setText(status + "..." + "\nFlow Time: " + flowTime + "\nScore: " + score + "\nTransactionId: " + transactionId);
                         restart();
                         break;
                     case "SUCCESS":
                         statusTextView.setTextColor(Color.GREEN);
-
-                        // Session detect id
-                        String sid = response.data.getOrDefault("sid", "");
-
-                        // User id
-                        String userId = response.data.getOrDefault("userId", "");
-
-                        // Detect image
-                        byte[] imageBytes = response.imageBytes;
-
-                        statusTextView.setText("Мы вас узнали"
-                                + "\nFlow Time: " + flowTime
-                                + "\nSid: " + sid);
+                        statusTextView.setText("Успех!" + "\nFlow Time: " + flowTime + "\nScore: " + score + "\nTransactionId: " + transactionId);
                         restart();
                         break;
                     default:
@@ -145,11 +150,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        stop();
-    }
+
 
     public void stop() {
         if (faceDetector != null) {
